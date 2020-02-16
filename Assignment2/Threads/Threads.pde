@@ -1,4 +1,3 @@
-
 float floor = 1000;
 float grav = 500; //0
 float radius = 7;
@@ -9,6 +8,8 @@ float kv = 50;
 int numPoints = 10;
 int numStrings = 10;
 Camera camera;
+int showSpheres = -1;
+int addWind;
 
 
 ArrayList<Strings> strings = new ArrayList();
@@ -80,12 +81,18 @@ void update(float dt){
      Strings str = strings.get(j);
      Strings neighbor = new Strings();
      for (int i = 0; i < numPoints; i ++){ 
-      float sx, sy, sz, stringLen, dampF;
+      if (j < numStrings - 1){
+        neighbor = strings.get(j+1);
+      } else {
+        neighbor.noValues();
+      }
+      float sx, sy, sz, stringLen, hx, hy, hz, horizLen, dampF;
       if(i == 0){
         sx = (str.point.get(i).x - str.anchorX);
         sy = (str.point.get(i).y - str.anchorY);
         sz = (str.point.get(i).z - str.anchorZ);
         stringLen = sqrt(sx*sx + sy*sy + sz*sz);
+        
       } else {
         sx = (str.point.get(i).x - str.point.get(i-1).x);
         sy = (str.point.get(i).y - str.point.get(i-1).y);
@@ -97,12 +104,15 @@ void update(float dt){
         float dirX = sx/stringLen;
         float dirY = sy/stringLen;
         float dirZ = sz/stringLen;
+
         str.projVel[i] = str.vel.get(i).x*dirX + str.vel.get(i).y*dirY + str.vel.get(i).z*dirZ;
         if (i == 0){
           dampF = -kv*(str.projVel[i] - 0);
         } else {
           dampF = -kv*(str.projVel[i] + str.projVel[i-1]);
         }
+        
+        
         
         str.force.get(i).x = (stringF+dampF)*dirX;
         str.force.get(i).y = (stringF+dampF)*dirY;
@@ -113,7 +123,7 @@ void update(float dt){
           str.vel.get(i).y += (grav + (.5*str.force.get(i).y)/mass)*dt;
         } else {
           str.vel.get(i).x += ((.5*str.force.get(i).x - .5*str.force.get(i+1).x)/mass)*dt;
-          str.vel.get(i).z += ((.5*str.force.get(i).z - .5*str.force.get(i+1).z)/mass)*dt;
+          str.vel.get(i).z += ((.5*str.force.get(i).z - .5*str.force.get(i+1).z)/mass)*dt+addWind;
           str.vel.get(i).y += (grav + (.5*str.force.get(i).y - .5*str.force.get(i+1).y)/mass)*dt;
         }
   
@@ -127,11 +137,21 @@ void update(float dt){
          //}
      }       
    }
+   addWind=0;
 }
 
 void keyPressed()
 {
   camera.HandleKeyPressed();
+  if (key == ' ') {
+    showSpheres*=-1;
+  } 
+  else if (key == 'z') {
+    addWind = 50;
+  }
+  else if (key == 'x') {
+    addWind = -50;
+  }
 }
 
 void keyReleased()
@@ -157,10 +177,12 @@ void draw() {
       } else {
         line(strings.get(j).point.get(i-1).x,strings.get(j).point.get(i-1).y, strings.get(j).point.get(i-1).z, strings.get(j).point.get(i).x,strings.get(j).point.get(i).y, strings.get(j).point.get(i).z);
       }
-      translate(strings.get(j).point.get(i).x,strings.get(j).point.get(i).y, strings.get(j).point.get(i).z);
-      noStroke();
-      fill(0,200,10);
-      sphere(radius);
+      if (showSpheres == 1){
+        translate(strings.get(j).point.get(i).x,strings.get(j).point.get(i).y, strings.get(j).point.get(i).z);
+        noStroke();
+        fill(0,200,10);
+        sphere(radius);
+      }
       popMatrix();
     }
   }
@@ -179,4 +201,17 @@ class Strings{
 
   
   Strings(){}
+  
+  void noValues(){
+    for (int j = 0; j < numPoints; j++){
+      anchorX = 0;
+      anchorY = 0;
+      anchorZ = 0;
+      point.add(new PVector(0, 0, 0));
+      vel.add(new PVector(0, 0));
+      accel.add(new PVector(0, 0, 0));
+      force.add(new PVector(0, 0, 0));
+      projVel[j] = 0;
+    }
+  }
 }
